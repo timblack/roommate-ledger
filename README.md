@@ -1,6 +1,15 @@
 # roommate-ledger
 roommate-ledger is a web-based ledger which allows roommates to add, view, and keep track of shared expenses. It uses PHP, MySQL, and HTML+JQuery.
 
+# Screenshots
+roommate-ledger in Chrome(Mac OSX):
+
+![alt tag](/screenshots/Screenshot_Chrome_1.png)
+
+roommate-ledger in Safari on iOS:
+
+<img src="/screenshots/Screenshot_iOS_2.PNG" width="375" height="667" >
+
 #To get started:
 
 1) Setup your Apache, PHP, MySQL instances (use an XAMPP/LAMPP stack for easy setup).
