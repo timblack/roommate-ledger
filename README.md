@@ -1,7 +1,7 @@
 # roommate-ledger
-This is a web-version of a roommate-ledger spreadsheet found on Google Docs. It uses PHP, MySQL, and HTML+JQuery to keep track of shared expenses between housemates.
+roommate-ledger is a web-based ledger which allows roommates to add, view, and keep track of shared expenses. It uses PHP, MySQL, and HTML+JQuery.
 
-To get started:
+#To get started:
 
 1) Setup your Apache, PHP, MySQL instances (use an XAMPP/LAMPP stack for easy setup).
 
