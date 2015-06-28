@@ -1,0 +1,13 @@
+*/ Desktop scale pages */
+        html { background-color: #000000; }
+        @media only screen and (min-width: 1280px){
+            .ui-page {
+                width: 1280px !important;
+                margin: 0 auto !important;
+                position: relative !important;
+                border-right: 1px #6f6f6f6 outset !important;
+                border-left: 1px #6f6f6f6 outset !important;
+            }
+        }
+
+
