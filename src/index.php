@@ -2,8 +2,9 @@
 	include_once "constants.php";
 	include_once "db.php";
 	
+	// If there is something in the post request, 
 	if (isset($_POST["paidby"])) {
-		add_item();
+		add_ledger_item();
 	}
 ?>
 
@@ -29,63 +30,34 @@
 				<a href="./" data-icon="home" data-iconpos="notext" data-transition="fade"></a><h1><?php echo TITLE ?> Ledger</h1>
 			</div>
 	
+
 			<div data-role="content">
-	
 					<?php
+						require_once "general.php";
+					
 						/*
 						*	Displays the summary of the ledger.
 						*/
 					
 						// Get items from the database.
-						$items = get_items();
-						
-						// Generate a x by x array of zeroes.
-						$amount_owing = array();
-						for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-							$amount_owing[$i] = array();
-							for ($j=1; $j<=NUMBER_OF_PEOPLE; $j++) $amount_owing[$i][$j] = 0;
-						}
+						$items = get_ledger_items();
+						$housemates = get_list_housemates();
+						$amount_owing = calculate_totals($housemates, $items);
 						
 						// Echo the header of the table title.
 						echo('
 						<table style="width: 100%; text-align: center">
 							<tr><td></td><td></td>
 						');
-						for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-							echo "<td>".constant("PERSON_".$i)."</td>";
+						for ($i=0; $i<count($housemates); $i++) {
+							echo "<td>".$housemates[$i]["housemate_name"]."</td>";
 						}
 						echo "</tr>";
-
-						// Process each item in the ledger.
-						for ($j=0; $j<count($items); $j++) {
-							$item = $items[$j];
-
-							// Prepare the values from the database.
-							$pb = $item["paidby"];
-							$v = $item["value"];
-							$sb = $item["splitby"];
-							
-							// Count the number of people the item value is split between.
-							$count = 0;
-							for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-								if (($sb & (1 << ($i - 1))) != 0) {
-									$count++;
-								}
-							}
-							
-							// Sum the amount owing to each person.
-							for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-								if (($sb & (1 << ($i - 1))) != 0) {
-									$amount_owing[$i][$pb] += ($v / $count);
-									$amount_owing[$pb][$i] -= ($v / $count);
-								}
-							}
-						}
 						
 						// Echo each line of the summary.
-						for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-							echo "<tr><td>".constant("PERSON_".$i)."</td><td>owes</td>";
-							for ($j=1; $j<=NUMBER_OF_PEOPLE; $j++) {
+						for ($i=0; $i<count($housemates); $i++) {
+							echo "<tr><td>".$housemates[$i]["housemate_name"]."</td><td>owes</td>";
+							for ($j=0; $j<count($housemates); $j++) {
 								if ($i != $j) {
 									if ($amount_owing[$i][$j] > 0) {
 										echo "<td>$".round($amount_owing[$i][$j], 2, PHP_ROUND_HALF_DOWN)."</td>";
@@ -103,36 +75,66 @@
 						/*
 						*	Displays the items in the ledger.
 						*/
-					
-						// Get items from the database.
-						$items = get_items();
 
 						// Echo the header of the table title.
 						echo('
 						<table style="width: 100%; text-align: center">
-							<tr><th style="width: 120px">Date</th><th>Description</th><th>Paid By</th><th>Amount</th><th colspan="'.NUMBER_OF_PEOPLE.'">Split by</th><th>Notes</th></tr>
-							<tr><th></th><th></th><th></th><th></th>
+							<tr><th style="width: 120px">Date</th><th>Description</th><th>Paid By</th><th colspan="'.count($housemates).'">Split by</th><th>Notes</th></tr>
+							<tr><th></th><th></th><th></th>
 						');
-						for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) echo "<th>".constant("PERSON_".$i)."</th>";
+						for ($i=0; $i<count($housemates); $i++) echo "<th>".$housemates[$i]["housemate_name"]."</th>";
 						echo "<td></td></tr>";
+
+						// Set the initial ledger key.
+						$lkey = -1;
+						$newline = false;
+						$hm_count = 0;
 
 						// Echo each row item.
 						for ($j=0; $j<count($items); $j++) {
 							$item = $items[$j];
-							echo "<tr><td>".date('d-m-Y', strtotime($item["date"]))."</td><td>".$item["description"]."</td><td>".constant("PERSON_".$item["paidby"])."</td><td>$".$item["value"]."</td>";
+							
+							// Echo the line (if the ledger key changes, its a new item).
+							if ($item["lkey"] != $lkey) $newline = true;
+							else $newline = false;
+							
+							// If it is a new line, echo the details of the ledger item.
+							if ($newline) {						
+								echo "<tr><td>".date('d-m-Y', strtotime($item["date"]))."</td><td>".$item["description"]."</td><td>".$housemates[get_housemate_arr_position($housemates, $item["paidby"])]["housemate_name"]."</td>";
+								$lkey = $item["lkey"];
+								$hm_count = 0;
+							}
 							
 							// Echo each split-by indicators for each row.
-							for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
-								if ($item["splitby"] & (1 << ($i - 1))) echo "<td>x</td>";
-								else echo "<td></td>";
+							while ($hm_count<get_housemate_arr_position($housemates, $item["housemate_id"])) {
+								echo "<td></td>";
+								$hm_count++;
 							}
+							if (get_housemate_arr_position($housemates, $item["housemate_id"])==$hm_count) {
+								echo "<td>$".round($item["value"],2)."</td>";
+								$hm_count++;
+							}
+							
+							if (!$newline) {
+								$endline = false;
 
-							echo "<td>".$item["notes"]."</td>";
-							echo "</tr>";
+								// If it is the last item, or the ledger key changes, it is a new line.
+								if ($j==(count($items)-1)) $endline = true;
+								else $endline = ($items[$j+1]["lkey"] != $lkey);
+
+								// If it is the end of a line, pad out the table, and echo the notes.
+								if ($endline) {
+									while ($hm_count<count($housemates)) {
+										echo "<td></td>";
+										$hm_count++;
+									}
+									echo "<td>".$item["notes"]."</td>";
+									echo "</tr>";
+								}
+							}
 						}
 					?>
 				</div>
-				
 			</div>
 		</div>
 

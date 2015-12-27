@@ -1,5 +1,6 @@
 <?php
 	include_once "constants.php";
+	include_once "db.php";
 ?>
 
 <!DOCTYPE html> 
@@ -21,8 +22,13 @@
 		<div data-role="page" id="pgeAdd" data-theme="d">
 
 			<script>
+				// On Load Function
 				$(function () {
+
+					// On Form Submit
 					$("form").submit(function(e){
+		
+						// Check the description supplied is not nothing.
 						if ($("#description").val().length <= 0) {
 							alert("Please put a description for the item.");
 							e.preventDefault();
@@ -53,37 +59,35 @@
 							<input type="date" name="date" value="<?php echo date('Y-m-d'); ?>"/>
 						</fieldset>
 					</div>
-				
+			
 					<div data-role="fieldcontain" id="fieldPaidBy">
 						<label>Paid by:</label>
 						<fieldset data-role="controlgroup">
 							<?php
-								for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
+								// Display the housemates.
+								$housemates = get_list_housemates();
+							
+								// Iterate through the housemates.
+								for ($i=0; $i<count($housemates); $i++) {
 									echo('
-								<input type="radio" name="paidby" id="person'.$i.'" class="custom" value="'.$i.'"/>
-								<label for="person'.$i.'">'.constant("PERSON_".$i).'</label>
+								<input type="radio" name="paidby" id="pb_'.$housemates[$i]["housemate_id"].'" class="custom" value="'.$housemates[$i]["housemate_id"].'"/>
+								<label for="pb_'.$housemates[$i]["housemate_id"].'">'.$housemates[$i]["housemate_name"].'</label>
 									');								
 								}
 							?>
 						</fieldset>
 					</div>
-					
-					<div data-role="fieldcontain" id="fieldValue">
-						<label>Amount:</label>
-						<fieldset data-role="controlgroup">
-							<input type="text" name="value" value="0.00"/>
-						</fieldset>
-					</div>
-					
-					<div data-role="fieldcontain" id="fieldSplit">
+				
+					<div data-role="fieldcontain" id="fieldSplitBetween">
 						<label>Split between:</label>
 						<fieldset data-role="controlgroup">
 							<?php
-								for ($i=1; $i<=NUMBER_OF_PEOPLE; $i++) {
+								// Iterate through the housemates.							
+								for ($i=0; $i<count($housemates); $i++) {
 									echo('
-							<input type="checkbox" name="split_person'.$i.'" id="split_person'.$i.'" class="custom" />
-							<label for="split_person'.$i.'">'.constant("PERSON_".$i).'</label>
-									');
+								<input type="number" name="pv_'.$housemates[$i]["housemate_id"].'" id="pv_'.$housemates[$i]["housemate_id"].'" class="custom" placeholder="'.$housemates[$i]["housemate_name"].' ($)"/>
+								<label for="pv_'.$housemates[$i]["housemate_id"].'">'.$housemates[$i]["housemate_name"].'</label>
+									');								
 								}
 							?>
 						</fieldset>
